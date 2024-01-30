@@ -11,7 +11,7 @@
     "6c48a": {
       "importer": "texture",
       "uuid": "2e347a7f-54f3-40c1-b426-44d295de34c8@6c48a",
-      "displayName": "btn_account_login_norma",
+      "displayName": "loginBtn",
       "id": "6c48a",
       "name": "texture",
       "userData": {
@@ -35,7 +35,7 @@
     "f9941": {
       "importer": "sprite-frame",
       "uuid": "2e347a7f-54f3-40c1-b426-44d295de34c8@f9941",
-      "displayName": "btn_account_login_norma",
+      "displayName": "loginBtn",
       "id": "f9941",
       "name": "spriteFrame",
       "userData": {

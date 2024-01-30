@@ -1,4 +1,4 @@
-import { _decorator, Component, Label, resources, Texture2D, SpriteFrame, Sprite } from 'cc';
+import { _decorator, Component, Label, resources, Texture2D, SpriteFrame, Sprite, Node } from 'cc';
 const { ccclass, property } = _decorator;
 
 @ccclass('HallClient')
@@ -11,6 +11,9 @@ export class HallClient extends Component {
 
     @property(Sprite)
     public Avatar: Sprite = null!;
+
+    @property(Node)
+    public CreationRoom: Node = null!;
 
     start() {
         this.ID.string = "ID:" + globalThis.UserInfo.id;
@@ -31,5 +34,10 @@ export class HallClient extends Component {
     update(deltaTime: number) {
         
     }
+
+    public onCreateRoom(){
+        this.CreationRoom.active = true;
+    }
+
 }
 
