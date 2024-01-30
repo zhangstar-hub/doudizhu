@@ -1,10 +1,9 @@
-import { _decorator, Component, EventTarget, EditBox } from 'cc';
+import { _decorator, Component, EventTarget, EditBox, director } from 'cc';
 import { CNet } from "./network/Network";
-
+import { EventCenter } from './event/EventCenter';
+import { GameEvent } from './event/GameEvent';
 const { ccclass, property } = _decorator;
 
-const eventTraget = new EventTarget()
-globalThis._eventTraget = eventTraget;
 
 @ccclass('loginClient')
 export class loginClient extends Component {
@@ -16,18 +15,20 @@ export class loginClient extends Component {
     public PwsEditBox: EditBox = null!;
 
     start() {
-        this._init();
-    }
-
-    update(deltaTime: number) {
-    }
-
-    private _init(){
         CNet.connect('172.30.22.135', 8080);
+        EventCenter.on(GameEvent.ReqLogin, this.ReqLogin, this);
     }
 
-    public handleMessage({ cmd, data }: { cmd: string; data: { [key: string]: any } }): void {
-        globalThis._eventTraget.emit(cmd, data);
+    public ReqLogin(data: {[key:string]:any}): void {
+        if (data.error) {
+            return;
+        }
+        const userData = data.user;
+        globalThis.UserInfo.id = userData.id;
+        globalThis.UserInfo.usernname = userData.name;
+        globalThis.UserInfo.avatar = userData.avatar;
+        globalThis.UserInfo.coin = userData.coin;
+        director.loadScene("HallSence");
     }
 
     public onLoginBtnClick() { 

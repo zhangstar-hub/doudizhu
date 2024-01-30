@@ -1,6 +1,8 @@
 import { _decorator, Component, Node } from 'cc';
 const { ccclass, property } = _decorator;
 import Socket from "./Socket";
+import { EventCenter } from '../event/EventCenter';
+import { GameEvent } from '../event/GameEvent';
 
 type Message = {cmd:string, data: {[key:string]:any}}
 // 是否输出日志
@@ -162,8 +164,9 @@ export class Network {
     }
 
     private onMessage(e: MessageEvent) {
-        console.log(e.data);
         if (LOG_ENABLED) console.log(`network -> onMessage! data:${e.data}`);
+        const msg: Message = JSON.parse(e.data);
+        EventCenter.emit(GameEvent[msg.cmd], msg.data);
     }
 
     private onClose(e: CloseEvent) {
