@@ -149,8 +149,6 @@ export default class Socket {
     }
 
     private onclose(e: CloseEvent) {
-        console.log("close event");
-        
         if (this.m_onclose) {
             this.m_onclose.call(this.m_context, e);
         }
@@ -169,9 +167,8 @@ export default class Socket {
     }
 
     private ontimeout() {
-        if(!this.m_ws)
+        if(this.m_ws)
             return;
-
         if (this.m_ontimeout) {
             this.m_ontimeout.call(this.m_context);
         }
