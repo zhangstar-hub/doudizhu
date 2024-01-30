@@ -15,8 +15,9 @@ export class loginClient extends Component {
     public PwsEditBox: EditBox = null!;
 
     start() {
-        CNet.connect('172.30.22.135', 8080);
+        CNet.connect('127.0.0.1', 8080);
         EventCenter.on(GameEvent.ReqLogin, this.ReqLogin, this);
+        this.onKeepAlive();
     }
 
     public ReqLogin(data: {[key:string]:any}): void {
@@ -31,6 +32,9 @@ export class loginClient extends Component {
         director.loadScene("HallSence");
     }
 
+    /**
+     * 登陆请求
+     */
     public onLoginBtnClick() { 
         const name = this.AccountEditBox.string;
         const password = this.PwsEditBox.string;
@@ -41,6 +45,28 @@ export class loginClient extends Component {
                 password: password
             }
         })
+    }
+
+    /**
+     * 开启心跳检测
+     */
+    public onKeepAlive() {
+        if (globalThis.startKeepAlive) {
+            return;
+        }
+        globalThis.startKeepAlive = setInterval(() => {
+            CNet.send({
+                cmd: GameEvent.ReqKeepAlive,
+                data: {},
+            })
+        }, 5000)
+    }
+
+    /**
+     * 心跳处理函数
+     */
+    public ReqKeepAlive(data: {}) { 
+        console.log(data);
     }
     
 }

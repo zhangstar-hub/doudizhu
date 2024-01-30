@@ -120,8 +120,6 @@ export class Network {
 
     public send(msg: Message) {
         if(LOG_ENABLED) console.log(`network -> message: ${JSON.stringify(msg)}`);
-        console.log(this.connectState);
-        
         if (this.connectState == WebSocket.OPEN) {
             this.m_socket.send(JSON.stringify(msg));
         }
