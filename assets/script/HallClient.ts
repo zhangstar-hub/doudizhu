@@ -1,4 +1,4 @@
-import { _decorator, Component, Label, resources, Texture2D, SpriteFrame, Sprite, Node } from 'cc';
+import { _decorator, Component, Label, resources, Texture2D, SpriteFrame, Sprite, Node, director } from 'cc';
 const { ccclass, property } = _decorator;
 
 @ccclass('HallClient')
@@ -14,6 +14,9 @@ export class HallClient extends Component {
 
     @property(Node)
     public CreationRoom: Node = null!;
+
+    @property(Node)
+    public JoinRoom: Node = null!;
 
     start() {
         this.ID.string = "ID:" + globalThis.UserInfo.id;
@@ -39,5 +42,9 @@ export class HallClient extends Component {
         this.CreationRoom.active = true;
     }
 
+    public onJoinRoom() {
+        console.log("EnterRoom");
+        director.loadScene("RoomSence");
+    }
 }
 

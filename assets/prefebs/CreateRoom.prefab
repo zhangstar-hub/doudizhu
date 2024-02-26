@@ -37,7 +37,7 @@
         "__id__": 58
       }
     ],
-    "_active": false,
+    "_active": true,
     "_components": [
       {
         "__id__": 106
@@ -1502,7 +1502,7 @@
       "b": 0,
       "a": 255
     },
-    "_string": "新手场\n基础分x5",
+    "_string": "新手场\n基础分x1",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
     "_actualFontSize": 20,

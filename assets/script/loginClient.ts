@@ -15,7 +15,7 @@ export class loginClient extends Component {
     public PwsEditBox: EditBox = null!;
 
     start() {
-        CNet.connect('127.0.0.1', 8080);
+        CNet.connect('172.30.22.135', 8080);
         EventCenter.on(GameEvent.ReqLogin, this.ReqLogin, this);
         this.onKeepAlive();
     }
