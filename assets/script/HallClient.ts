@@ -19,6 +19,8 @@ export class HallClient extends Component {
     public JoinRoom: Node = null!;
 
     start() {
+        console.log("hall");
+        
         this.ID.string = "ID:" + globalThis.UserInfo.id;
         this.Name.string = globalThis.UserInfo.usernname;
         
