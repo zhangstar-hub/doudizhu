@@ -1,7 +1,8 @@
-import { _decorator, Button, Component, director, Label, Node, resources, Sprite, SpriteFrame, Texture2D } from 'cc';
+import { _decorator, AssetManager, assetManager, Button, Component, director, Label, Node, Prefab, resources, Sprite, SpriteAtlas, SpriteFrame, Texture2D } from 'cc';
 import { EventCenter } from './event/EventCenter';
 import { GameEvent } from './event/GameEvent';
 import { CNet } from './network/Network';
+import { PokerFactory } from './PokerFactory';
 const { ccclass, property } = _decorator;
 
 
@@ -87,6 +88,56 @@ export class RoomClient extends Component {
         name: '',
         avatar: '0',
     };
+
+    private gameGundle: AssetManager.Bundle = null!;
+    private pokerAtlas: SpriteAtlas = null!;
+    private pokerViewPrefab: Prefab = null!;
+    private pokerBackSp: SpriteFrame = null!;
+
+    public onLoad(): void {
+        console.log("onLoad");
+        
+        assetManager.loadBundle('resources', (error, bundle: AssetManager.Bundle) => { 
+            this.gameGundle = bundle;
+            this.onLoadPokerAtlas();
+        });
+    }
+
+    private onLoadPokerAtlas(): void { 
+        console.log("onLoadPokerAtlas");
+        
+        this.gameGundle.load("img/poker", SpriteAtlas, (err, altas: SpriteAtlas) => { 
+            this.pokerAtlas = altas;
+            this.onLoadPokerPrefab();
+        });
+    }
+
+    private onLoadPokerPrefab() { 
+        console.log("onLoadPokerPrefab");
+        this.gameGundle.load("prefabs/PokerView", Prefab, (err, prefab: Prefab) => { 
+            console.log("err", err);
+            this.pokerViewPrefab = prefab;
+            this.enterGame();
+        });
+    }
+
+    private enterGame() { 
+        this.gameGundle.load("/img/back.png", SpriteFrame, (err, pokerBackSp: SpriteFrame) => {
+            this.pokerBackSp = pokerBackSp;
+        })
+        this.node.addComponent(PokerFactory).Init(this.pokerAtlas, this.pokerViewPrefab, this.pokerBackSp);
+        
+        var xpos = -400;
+        var ypos = 0;
+
+        var cards = [103, 104, 203, 204, 303, 304];
+        for (var i = 0; i < cards.length; i++) { 
+            var poker = PokerFactory.Instance.CreatePoker(cards[i]);  
+            poker.ShowValue();
+            poker.node.setPosition(xpos, ypos);
+            xpos += 48;
+        }
+    }
 
     start() {
         EventCenter.on(GameEvent.ReqEnterRoom, this.ReqEnterRoom, this);

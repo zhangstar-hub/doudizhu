@@ -1,0 +1,14 @@
+{
+  "ver": "1.1.38",
+  "importer": "prefab",
+  "imported": true,
+  "uuid": "04a59418-7323-49e1-8de8-86f4dde86cb0",
+  "files": [
+    ".json"
+  ],
+  "subMetas": {},
+  "userData": {
+    "syncNodeName": "PokerView",
+    "persistent": false
+  }
+}

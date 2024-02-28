@@ -1,0 +1,15 @@
+{
+  "ver": "1.0.6",
+  "importer": "sprite-atlas",
+  "imported": false,
+  "uuid": "c90d7243-38b1-4d8f-b9a8-fda1ff39aa09",
+  "files": [
+    ".plist"
+  ],
+  "subMetas": {},
+  "userData": {
+    "atlasTextureName": "poker.png",
+    "format": 3,
+    "uuid": "c90d7243-38b1-4d8f-b9a8-fda1ff39aa09"
+  }
+}
