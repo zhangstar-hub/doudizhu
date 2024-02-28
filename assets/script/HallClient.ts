@@ -45,8 +45,7 @@ export class HallClient extends Component {
     }
 
     public onJoinRoom() {
-        console.log("EnterRoom");
-        director.loadScene("RoomSence");
+        director.loadScene("RoomScence");
     }
 }
 

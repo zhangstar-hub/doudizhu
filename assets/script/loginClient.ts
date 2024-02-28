@@ -29,7 +29,7 @@ export class loginClient extends Component {
         globalThis.UserInfo.usernname = userData.name;
         globalThis.UserInfo.avatar = userData.avatar;
         globalThis.UserInfo.coin = userData.coin;
-        director.loadScene("HallSence");
+        director.loadScene("HallScence");
     }
 
     /**
