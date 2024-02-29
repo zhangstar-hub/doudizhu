@@ -5,6 +5,7 @@ export enum GameEvent {
     ReqLeaveRoom = 'ReqLeaveRoom',
     ReqRoomReady = 'ReqRoomReady',
     ReqCallScore = 'ReqCallScore',
+    ReqWatchCards = 'ReqWatchCards',
     ReqEnterRoomUpdate = 'ReqEnterRoomUpdate',
     ReqLeaveRoomUpdate = 'ReqLeaveRoomUpdate',
     ReqRoomReadyUpdate = 'ReqRoomReadyUpdate',

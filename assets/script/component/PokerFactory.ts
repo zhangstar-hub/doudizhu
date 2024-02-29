@@ -1,5 +1,5 @@
 import { _decorator, Component, instantiate, Node, Prefab, Sprite, SpriteAtlas, SpriteFrame } from 'cc';
-import { Poker } from './network/Poker';
+import { Poker } from './Poker';
 const { ccclass, property } = _decorator;
 
 @ccclass('PokerFactory')

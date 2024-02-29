@@ -1,8 +1,8 @@
-import { _decorator, AssetManager, assetManager, Button, Component, director, Label, Node, Prefab, resources, Sprite, SpriteAtlas, SpriteFrame, Texture2D } from 'cc';
+import { _decorator, AssetManager, assetManager, view, Component, director, Label, Node, Prefab, resources, Sprite, SpriteAtlas, SpriteFrame, Texture2D } from 'cc';
 import { EventCenter } from './event/EventCenter';
 import { GameEvent } from './event/GameEvent';
 import { CNet } from './network/Network';
-import { PokerFactory } from './PokerFactory';
+import { PokerFactory } from './component/PokerFactory';
 const { ccclass, property } = _decorator;
 
 
@@ -14,7 +14,7 @@ interface Player {
     desk_id?: number;
     call_score?: number;
     role?: number;
-    card_number?: number;
+    card_num?: number;
     is_ready?: boolean;
 };
 
@@ -36,6 +36,8 @@ export class RoomClient extends Component {
     CallScoreText_0: Label = null!;
     @property({group: {name: 'user_0'}, type: Node})
     Arrow_0: Node = null!;
+    @property({group: {name: 'user_0'}, type: Node})
+    PokerArea_0: Node = null!;
 
     @property({group: {name: 'user_1'}, type: Sprite})
     user_1_avatar: Sprite = null!;
@@ -51,6 +53,8 @@ export class RoomClient extends Component {
     CallScoreText_1: Label = null!;
     @property({group: {name: 'user_1'}, type: Node})
     Arrow_1: Node = null!;
+    @property({group: {name: 'user_1'}, type: Node})
+    PokerArea_1: Node = null!;
 
     @property({group: {name: 'user_2'}, type: Sprite})
     user_2_avatar: Sprite = null!;
@@ -66,6 +70,8 @@ export class RoomClient extends Component {
     CallScoreText_2: Label = null!;
     @property({group: {name: 'user_2'}, type: Node})
     Arrow_2: Node = null!;
+    @property({group: {name: 'user_2'}, type: Node})
+    PokerArea_2: Node = null!;
 
     @property(Node)
     CallScoreBtn_1: Node = null!;
@@ -95,17 +101,17 @@ export class RoomClient extends Component {
     private pokerBackSp: SpriteFrame = null!;
 
     public onLoad(): void {
-        console.log("onLoad");
-        
         assetManager.loadBundle('resources', (error, bundle: AssetManager.Bundle) => { 
             this.gameGundle = bundle;
-            this.onLoadPokerAtlas();
+            this.gameGundle.load("/img/back/spriteFrame", SpriteFrame, (err, pokerBackSp: SpriteFrame) => {
+                console.log("pokerBackSp", pokerBackSp);
+                this.pokerBackSp = pokerBackSp;
+                this.onLoadPokerAtlas();
+            })
         });
     }
 
     private onLoadPokerAtlas(): void { 
-        console.log("onLoadPokerAtlas");
-        
         this.gameGundle.load("img/poker", SpriteAtlas, (err, altas: SpriteAtlas) => { 
             this.pokerAtlas = altas;
             this.onLoadPokerPrefab();
@@ -113,37 +119,18 @@ export class RoomClient extends Component {
     }
 
     private onLoadPokerPrefab() { 
-        console.log("onLoadPokerPrefab");
         this.gameGundle.load("prefabs/PokerView", Prefab, (err, prefab: Prefab) => { 
-            console.log("err", err);
             this.pokerViewPrefab = prefab;
             this.enterGame();
         });
     }
 
-    private enterGame() { 
-        this.gameGundle.load("/img/back.png", SpriteFrame, (err, pokerBackSp: SpriteFrame) => {
-            this.pokerBackSp = pokerBackSp;
-        })
-        this.node.addComponent(PokerFactory).Init(this.pokerAtlas, this.pokerViewPrefab, this.pokerBackSp);
-        
-        var xpos = -400;
-        var ypos = 0;
-
-        var cards = [103, 104, 203, 204, 303, 304];
-        for (var i = 0; i < cards.length; i++) { 
-            var poker = PokerFactory.Instance.CreatePoker(cards[i]);  
-            poker.ShowValue();
-            poker.node.setPosition(xpos, ypos);
-            xpos += 48;
-        }
-    }
-
-    start() {
+    private enterGame() {
         EventCenter.on(GameEvent.ReqEnterRoom, this.ReqEnterRoom, this);
         EventCenter.on(GameEvent.ReqLeaveRoom, this.ReqLeaveRoom, this);
         EventCenter.on(GameEvent.ReqRoomReady, this.ReqRoomReady, this);
         EventCenter.on(GameEvent.ReqCallScore, this.ReqCallScore, this);
+        EventCenter.on(GameEvent.ReqWatchCards, this.ReqWatchCards, this);
         EventCenter.on(GameEvent.ReqEnterRoomUpdate, this.ReqEnterRoomUpdate, this);
         EventCenter.on(GameEvent.ReqLeaveRoomUpdate, this.ReqLeaveRoomUpdate, this);
         EventCenter.on(GameEvent.ReqRoomReadyUpdate, this.ReqRoomReadyUpdate, this);
@@ -152,10 +139,6 @@ export class RoomClient extends Component {
             cmd: 'ReqEnterRoom',
             data: {}
         })
-    }
-
-    update(deltaTime: number) {
-
     }
 
     // 回到房间事件
@@ -211,7 +194,7 @@ export class RoomClient extends Component {
         
         this.players.forEach((v)=>{
             if (v.id) {
-                this.initPlayer(v)
+                this.renderPlayer(v)
             }
         })
         this.showReadyBtn();
@@ -242,16 +225,44 @@ export class RoomClient extends Component {
         this.showArrow();
     }
 
-    // 叫份
+    // 叫分
     public ReqCallScore(data: {[key:string]:any}) {
         if (data.error) {
-            console.error("Error: " + data.error);
+            return
+        }
+        this.game_status = data.game_status;
+        this.call_desk = data.call_desk;
+        if (this.game_status == 2) {
+            CNet.send({
+                cmd: 'ReqWatchCards',
+                data: {}
+            })
+        }
+        this.showCallScore();
+        this.showArrow();
+    }
+
+    // 看牌
+    public ReqWatchCards(data: {[key:string]:any}) {
+        if (data.error) {
             return
         }
         console.log(data);
         this.game_status = data.game_status;
-        this.call_desk = data.call_desk;
-        this.showCallScore();
+        this.my_cards = data.cards;
+        this.players.forEach((val, idx)=>{
+            for (const v of data.players_cards_num) {
+                if (v.id == val.id) {
+                    val.card_num = v.card_num;
+                    break;
+                }
+            }
+            if (idx == 0) {
+                this.renderCards(idx, this.my_cards)
+            }else {
+                this.renderCards(idx, Array(val.card_num).fill(101))
+            }
+        })
         this.showArrow();
     }
 
@@ -260,7 +271,7 @@ export class RoomClient extends Component {
         const message = data.message;
         const position: number = this.getPosition(message.desk_id);
         this.players[position] = data.message;
-        this.initPlayer(this.players[position]);
+        this.renderPlayer(this.players[position]);
     }
 
     // 其他人离开房间 更新信息
@@ -268,7 +279,7 @@ export class RoomClient extends Component {
         const from_uid = data.from_uid;
         for (var i = 0; i < this.players.length; i++) {
             if (from_uid == this.players[i].id) {
-                this.initPlayer({...this.default_player, desk_id: this.players[i].desk_id});
+                this.renderPlayer({...this.default_player, desk_id: this.players[i].desk_id});
                 this.players[i] = {};
                 break;
             }
@@ -307,12 +318,18 @@ export class RoomClient extends Component {
         }
         this.game_status = data.message.game_status;
         this.call_desk = data.message.call_desk;
+        if (this.game_status == 2) {
+            CNet.send({
+                cmd: 'ReqWatchCards',
+                data: {}
+            })
+        }
         this.showCallScore();
         this.showArrow();
     }
 
     // 渲染用戶信息
-    initPlayer(player: Player) {
+    private renderPlayer(player: Player) {
         const position = this.getPosition(player.desk_id);
         const user_name: Label = this[`user_${position}_name`];
         const user_coin: Label = this[`user_${position}_coin`];
@@ -339,8 +356,35 @@ export class RoomClient extends Component {
             ReadyBtnText.string = "未准备"
         }
         CallScoreText.string = `${player.call_score}分`
+        if (position === 0) {
+            this.renderCards(position, this.my_cards)
+        }else {
+            this.renderCards(position, Array(player.card_num).fill(101))
+        }
     }
 
+    private renderCards(position: number, cards: number[]) {
+        const pokerArea = this[`PokerArea_${position}`];
+        pokerArea.addComponent(PokerFactory).Init(this.pokerAtlas, this.pokerViewPrefab, this.pokerBackSp);
+        var xpos = 0;
+        var ypos = 0;
+        if (position == 0) {
+            var width = pokerArea.getComponent(Component).width;
+            var xpos = Math.floor((width - (cards.length * 25)) / 2);
+        }
+        for (var i = 0; i < cards.length; i++) { 
+            var poker = PokerFactory.Instance.CreatePoker(cards[i]); 
+            if (position == 0) {
+                poker.ShowValue();
+                poker.node.setPosition(xpos, ypos);
+                xpos += 25;
+            }else{
+                poker.ShowBack();
+                poker.node.setPosition(xpos, ypos);
+                xpos += 18;
+            }
+        }
+    }
     // 获取玩家的位置
     private getPosition(desk_id: number) {
         return (desk_id - this.players[0].desk_id + 3) % 3

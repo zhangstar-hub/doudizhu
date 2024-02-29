@@ -42,13 +42,13 @@
         "trimThreshold": 1,
         "rotated": false,
         "offsetX": 0,
-        "offsetY": 0,
-        "trimX": 0,
+        "offsetY": 5.5,
+        "trimX": 4,
         "trimY": 0,
-        "width": 650,
-        "height": 945,
-        "rawWidth": 650,
-        "rawHeight": 945,
+        "width": 312,
+        "height": 449,
+        "rawWidth": 320,
+        "rawHeight": 460,
         "borderTop": 0,
         "borderBottom": 0,
         "borderLeft": 0,
@@ -69,7 +69,7 @@
   "userData": {
     "type": "sprite-frame",
     "fixAlphaTransparencyArtifacts": true,
-    "hasAlpha": false,
+    "hasAlpha": true,
     "redirect": "8a70a582-87f9-4324-b321-751d91fe8fe4@f9941"
   }
 }
