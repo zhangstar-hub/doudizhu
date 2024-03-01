@@ -7,7 +7,8 @@ export class Poker extends Component {
     private backSp: SpriteFrame = null!;
     private valueSp: SpriteFrame = null!;
     private sprite: Sprite  = null!;
-     
+    public selected: boolean = false;
+
     public Init(value: number, backSp: SpriteFrame, valueSp: SpriteFrame ): void {
         this.value = value;
         this.backSp = backSp;
