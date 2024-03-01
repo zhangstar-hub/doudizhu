@@ -1,4 +1,4 @@
-import { _decorator, AssetManager, assetManager, view, Component, director, Label, Node, Prefab, resources, Sprite, SpriteAtlas, SpriteFrame, Texture2D, NodeEventType, EventTouch, Button, UITransform } from 'cc';
+import { _decorator, AssetManager, assetManager, view, Component, director, Label, Node, Prefab, resources, Sprite, SpriteAtlas, SpriteFrame, Texture2D, NodeEventType, EventTouch, Button, UITransform, log } from 'cc';
 import { EventCenter } from './event/EventCenter';
 import { GameEvent } from './event/GameEvent';
 import { CNet } from './network/Network';
@@ -92,14 +92,17 @@ export class RoomClient extends Component {
     @property(Node)
     PublicPokerArea: Node = null!;
 
+    // 结算弹出
+    @property(Node)
+    SettleView: Node = null!
+
     room_id: number = 0;    // 房间ID
-    game_status: number = 0;    // 游戏状态 0：准备 1：叫份 2：进行
+    game_status: number = 0;    // 游戏状态 0：准备 1：叫分 2：进行
     score: number = 0;  // 分数
     call_desk: number = 0;  // 出手的座位号
-    
+
     my_cards = [];  // 我的卡片
-    played_cards = []; // 我的出牌
-    my_player: Player = null;  // 我的信息
+    played_cards = []; // 最近一次的出牌
     players: Player[] = []; // 全部玩家信息
 
     private play_cards_lock: boolean = false;
@@ -157,6 +160,18 @@ export class RoomClient extends Component {
         })
     }
 
+    // init player
+    private initPlayer(players: Player[]){
+        for (let i = 0; i < this.players.length; i++) {
+            for (const p of players) {
+                if (p.id == this.players[i].id) {
+                    this.players[i] = p;
+                    break;
+                }
+            }
+        }
+    }
+
     // 回到房间事件
     public onClickBackHall() {
         CNet.send({
@@ -167,12 +182,12 @@ export class RoomClient extends Component {
 
     // 准备
     public onClickReady() {
-        this.my_player.is_ready = !this.my_player.is_ready;
-        console.log(this.my_player);
+        const my_player = this.players[0];
+        my_player.is_ready = !my_player.is_ready;
         CNet.send({
             cmd: 'ReqRoomReady',
             data: {
-                'is_ready': this.my_player.is_ready,
+                'is_ready': my_player.is_ready,
             }
         })
     }
@@ -224,6 +239,22 @@ export class RoomClient extends Component {
         })
     }
 
+    // 关闭结算弹出 重置数据
+    public onClickCloseSettle() {
+        this.SettleView.active = false;
+        this.game_status = 0;
+        this.my_cards = [];
+        console.log("onClickCloseSettle", this.players);
+        this.players.forEach(p => {
+            this.renderPlayer(p);
+        })
+        this.renderPublicCards([]);
+        this.showReadyBtn();
+        this.showArrow();
+        this.showPlayCardBtn();
+        this.showCallScore();
+    }
+
     // 进入房间
     public ReqEnterRoom(data: {[key:string]:any}): void {
         const room_data = data.room;
@@ -244,7 +275,6 @@ export class RoomClient extends Component {
         }
         this.players.push(...room_data.players.slice(index, room_data.players.length));
         this.players.push(...room_data.players.slice(0, index));
-        this.my_player = this.players[index];
         
         this.players.forEach((v)=>{
             if (v.id) {
@@ -271,7 +301,7 @@ export class RoomClient extends Component {
         }
         this.game_status = data.game_status;
         this.call_desk = data.call_desk;
-        if (this.my_player.is_ready) {
+        if (this.players[0].is_ready) {
             this.ReadyBtnText_0.string = "已准备";
         }else {
             this.ReadyBtnText_0.string = "未准备";
@@ -279,6 +309,12 @@ export class RoomClient extends Component {
         this.showReadyBtn();
         this.showCallScore();
         this.showArrow();
+        if (this.game_status == 1) {
+            this.players.forEach((v, idx)=>{
+                this.renderHoldCards(idx, []);
+            })
+            this.renderPublicCards([]);
+        }
     }
 
     // 叫分
@@ -304,22 +340,17 @@ export class RoomClient extends Component {
         if (data.error) {
             return
         }
-        console.log(data);
         this.game_status = data.game_status;
         this.my_cards = data.cards;
+        this.initPlayer(data.players);
         this.players.forEach((val, idx)=>{
-            for (const v of data.players_cards_num) {
-                if (v.id == val.id) {
-                    val.card_num = v.card_num;
-                    break;
-                }
-            }
             if (idx == 0) {
                 this.renderHoldCards(idx, this.my_cards)
             }else {
                 this.renderHoldCards(idx, Array(val.card_num).fill(101))
             }
         })
+        console.log(this.players);
         this.showArrow();
     }
 
@@ -335,7 +366,19 @@ export class RoomClient extends Component {
         this.call_desk = data.call_desk;
         this.played_cards = data.played_cards;
         this.PokerArea_0.removeAllChildren();
-        this.renderHoldCards(0, this.my_cards);
+
+        // 游戏结束
+        if (this.game_status == 3) {
+            for (const p of data.players_cards) {
+                this.renderHoldCards(p.desk_id, p.cards);
+            }
+            const win_coins = data.settle_info.win_coins_data[`${this.players[0].id}`].win_coins;
+            const win_role = data.settle_info.win_role;
+            this.renderSettle(win_role, win_coins);
+            this.initPlayer(data.settle_info.players);
+        } else {
+            this.renderHoldCards(0, this.my_cards);
+        }
         this.renderPublicCards(this.played_cards);
         this.showArrow();
     }
@@ -379,6 +422,12 @@ export class RoomClient extends Component {
                 break;
             }
         }
+        if (this.game_status == 1) {
+            this.players.forEach((v, idx)=>{
+                this.renderHoldCards(idx, []);
+            })
+            this.renderPublicCards([]);
+        }
         this.showReadyBtn();
         this.showArrow();
         this.showCallScore();
@@ -408,23 +457,31 @@ export class RoomClient extends Component {
         if (data.error) {
             return
         }
+        console.log("ReqPlayCardsUpdate: ", data);
         this.game_status = data.message.game_status;
         this.call_desk = data.message.call_desk;
-        if (this.game_status == 3) {
-            console.log("游戏结束");
-        }
         this.played_cards = data.message.played_cards;
         for (const player of this.players) {
             if (player.id == data.from_uid){
                 player.card_num = data.message.card_num;
                 const position = this.getPosition(player.desk_id);
-                this[`PokerArea_${position}`].removeAllChildren();
                 this.renderHoldCards(position, Array(player.card_num).fill(101));
                 break;
             }
         }
         if (this.played_cards.length > 0) {
             this.renderPublicCards(this.played_cards);            
+        }
+
+        // 游戏结束
+        if (this.game_status == 3) {
+            for (const p of data.message.players_cards) {
+                this.renderHoldCards(p.desk_id, p.cards);
+            }
+            this.initPlayer(data.message.settle_info.players);
+            const win_coins = data.message.settle_info.win_coins_data[`${this.players[0].id}`].win_coins;
+            const win_role = data.message.settle_info.win_role;
+            this.renderSettle(win_role, win_coins);
         }
         this.showArrow();
     }
@@ -461,6 +518,7 @@ export class RoomClient extends Component {
     // 渲染卡牌
     private renderHoldCards(position: number, cards: number[]) {
         const pokerArea = this[`PokerArea_${position}`];
+        pokerArea.removeAllChildren();
         pokerArea.addComponent(PokerFactory).Init(this.pokerAtlas, this.pokerViewPrefab, this.pokerBackSp);
         var xpos = 0;
         var ypos = 0;
@@ -485,7 +543,11 @@ export class RoomClient extends Component {
                 }, poker)
                 xpos += 25;
             }else{
-                poker.ShowBack();
+                if (this.game_status == 3) {
+                    poker.ShowValue();
+                }else{
+                    poker.ShowBack();
+                }
                 poker.node.setPosition(xpos, ypos);
                 xpos += 18;
             }
@@ -508,6 +570,17 @@ export class RoomClient extends Component {
             poker.ShowValue();
             poker.node.setPosition(xpos, ypos);
             xpos += 25;
+        }
+    }
+
+    // 渲染结算弹出
+    private renderSettle(winRole: number, winCoin: number) {
+        this.SettleView.active = true;
+        const descCom = this.SettleView.getChildByName("Desc").getComponent(Label);
+        if (winRole == this.players[0].role) {
+            descCom.string = `你赢了${winCoin}!`;
+        }else {
+            descCom.string = `你输了${winCoin}!`;
         }
     }
 
