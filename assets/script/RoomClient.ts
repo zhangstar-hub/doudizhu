@@ -1,4 +1,4 @@
-import { _decorator, AssetManager, assetManager, view, Component, director, Label, Node, Prefab, resources, Sprite, SpriteAtlas, SpriteFrame, Texture2D, NodeEventType, EventTouch, Button, UITransform, log } from 'cc';
+import { _decorator, AssetManager, assetManager, view, Component, director, Label, Node, Prefab, resources, Sprite, SpriteAtlas, SpriteFrame, Texture2D, NodeEventType, EventTouch, Button, UITransform, log, instantiate } from 'cc';
 import { EventCenter } from './event/EventCenter';
 import { GameEvent } from './event/GameEvent';
 import { CNet } from './network/Network';
@@ -33,8 +33,8 @@ export class RoomClient extends Component {
     ReadyBtn_0: Node = null!;
     @property({group: {name: 'user_0'}, type: Label})
     ReadyBtnText_0: Label = null!;
-    @property({group: {name: 'user_0'}, type: Label})
-    CallScoreText_0: Label = null!;
+    @property({group: {name: 'user_0'}, type: Node})
+    CallScoreText_0: Node = null!;
     @property({group: {name: 'user_0'}, type: Node})
     Arrow_0: Node = null!;
     @property({group: {name: 'user_0'}, type: Node})
@@ -50,8 +50,8 @@ export class RoomClient extends Component {
     ReadyBtn_1: Node = null!;
     @property({group: {name: 'user_1'}, type: Label})
     ReadyBtnText_1: Label = null!;
-    @property({group: {name: 'user_1'}, type: Label})
-    CallScoreText_1: Label = null!;
+    @property({group: {name: 'user_1'}, type: Node})
+    CallScoreText_1: Node = null!;
     @property({group: {name: 'user_1'}, type: Node})
     Arrow_1: Node = null!;
     @property({group: {name: 'user_1'}, type: Node})
@@ -67,14 +67,16 @@ export class RoomClient extends Component {
     ReadyBtn_2: Node = null!;
     @property({group: {name: 'user_2'}, type: Label})
     ReadyBtnText_2: Label = null!;
-    @property({group: {name: 'user_2'}, type: Label})
-    CallScoreText_2: Label = null!;
+    @property({group: {name: 'user_2'}, type: Node})
+    CallScoreText_2: Node = null!;
     @property({group: {name: 'user_2'}, type: Node})
     Arrow_2: Node = null!;
     @property({group: {name: 'user_2'}, type: Node})
     PokerArea_2: Node = null!;
 
     // 叫分按钮 1-3分
+    @property(Node)
+    CallScoreBtn_0: Node = null!;
     @property(Node)
     CallScoreBtn_1: Node = null!;
     @property(Node)
@@ -91,6 +93,9 @@ export class RoomClient extends Component {
     // 公共出牌区域
     @property(Node)
     PublicPokerArea: Node = null!;
+    // 底牌区域
+    @property(Node)
+    LastPokerArea: Node = null!;
 
     // 结算弹出
     @property(Node)
@@ -100,6 +105,7 @@ export class RoomClient extends Component {
     game_status: number = 0;    // 游戏状态 0：准备 1：叫分 2：进行
     score: number = 0;  // 分数
     call_desk: number = 0;  // 出手的座位号
+    max_call_score: number = 0;     // 当前最大叫份
 
     my_cards = [];  // 我的卡片
     played_cards = []; // 最近一次的出牌
@@ -110,6 +116,7 @@ export class RoomClient extends Component {
         coin: 0,
         name: '',
         avatar: '0',
+        card_num: 0,
     };
 
     private gameGundle: AssetManager.Bundle = null!;
@@ -135,7 +142,7 @@ export class RoomClient extends Component {
         });
     }
 
-    private onLoadPokerPrefab() { 
+    private onLoadPokerPrefab() {
         this.gameGundle.load("prefabs/PokerView", Prefab, (err, prefab: Prefab) => { 
             this.pokerViewPrefab = prefab;
             this.enterGame();
@@ -156,7 +163,7 @@ export class RoomClient extends Component {
         EventCenter.on(GameEvent.ReqPlayCardsUpdate, this.ReqPlayCardsUpdate, this);
         CNet.send({
             cmd: 'ReqEnterRoom',
-            data: {}
+            data: {} 
         })
     }
 
@@ -213,9 +220,9 @@ export class RoomClient extends Component {
         
         this.PokerArea_0.children.forEach((node: Node) => {
             const poker = node.getComponent(Poker);
-            if (poker.selected) {
-                played_cards.push(poker.PokerValue());
-            }
+            // if (poker.selected) {
+            played_cards.push(poker.PokerValue());
+            // }
         });
         CNet.send({
             cmd: 'ReqPlayCards',
@@ -244,7 +251,6 @@ export class RoomClient extends Component {
         this.SettleView.active = false;
         this.game_status = 0;
         this.my_cards = [];
-        console.log("onClickCloseSettle", this.players);
         this.players.forEach(p => {
             this.renderPlayer(p);
         })
@@ -253,18 +259,21 @@ export class RoomClient extends Component {
         this.showArrow();
         this.showPlayCardBtn();
         this.showCallScore();
+        this.renderLastCards([]);
+        this.node.getChildByName("Mask").active = false;
     }
 
     // 进入房间
     public ReqEnterRoom(data: {[key:string]:any}): void {
+        console.log(data);
         const room_data = data.room;
-        
         this.room_id = room_data.room_id;
         this.game_status = room_data.game_status;
         this.score = room_data.score;
         this.call_desk = room_data.call_desk;
         this.my_cards = room_data.cards;
         this.played_cards = room_data.played_cards;
+        this.max_call_score = room_data.max_call_score;
 
         let index = 0;
         for (var i = 0; i < room_data.players.length; i++) {
@@ -286,6 +295,7 @@ export class RoomClient extends Component {
         this.showArrow();
         this.showPlayCardBtn();
         this.renderPublicCards(this.played_cards);
+        this.renderLastCards(room_data.last_cards);
     }
 
     // 离开房间
@@ -301,19 +311,15 @@ export class RoomClient extends Component {
         }
         this.game_status = data.game_status;
         this.call_desk = data.call_desk;
-        if (this.players[0].is_ready) {
-            this.ReadyBtnText_0.string = "已准备";
-        }else {
-            this.ReadyBtnText_0.string = "未准备";
-        }
         this.showReadyBtn();
         this.showCallScore();
         this.showArrow();
         if (this.game_status == 1) {
-            this.players.forEach((v, idx)=>{
-                this.renderHoldCards(idx, []);
+            CNet.send({
+                cmd: 'ReqWatchCards',
+                data: {}
             })
-            this.renderPublicCards([]);
+            this.renderLastCards([]);
         }
     }
 
@@ -324,7 +330,9 @@ export class RoomClient extends Component {
         }
         this.game_status = data.game_status;
         this.call_desk = data.call_desk;
+        this.max_call_score = Math.max(data.max_call_score, this.max_call_score);
         if (this.game_status == 2) {
+            this.renderLastCards(data.last_cards);
             CNet.send({
                 cmd: 'ReqWatchCards',
                 data: {}
@@ -350,7 +358,6 @@ export class RoomClient extends Component {
                 this.renderHoldCards(idx, Array(val.card_num).fill(101))
             }
         })
-        console.log(this.players);
         this.showArrow();
     }
 
@@ -376,6 +383,7 @@ export class RoomClient extends Component {
             const win_role = data.settle_info.win_role;
             this.renderSettle(win_role, win_coins);
             this.initPlayer(data.settle_info.players);
+            this.showPlayCardBtn();
         } else {
             this.renderHoldCards(0, this.my_cards);
         }
@@ -409,24 +417,19 @@ export class RoomClient extends Component {
         const is_ready = data.message.is_ready;
         this.game_status = data.message.game_status;
         this.call_desk = data.message.call_desk;
-        console.log("ReqRoomReadyUpdate", data);
 
-        for (var i = 0; i < this.players.length; i++) {
-            if (from_uid == this.players[i].id) {
-                const position =this.getPosition(this.players[i].desk_id);
-                if (is_ready) {
-                    this[`ReadyBtnText_${position}`].string = "已准备"
-                } else {
-                    this[`ReadyBtnText_${position}`].string = "未准备"
-                }
+        if (this.game_status == 1) {
+            CNet.send({
+                cmd: 'ReqWatchCards',
+                data: {}
+            })
+            this.renderLastCards([]);
+        }
+        for (const player of this.players) {
+            if (player.id == from_uid) {
+                player.is_ready = is_ready;
                 break;
             }
-        }
-        if (this.game_status == 1) {
-            this.players.forEach((v, idx)=>{
-                this.renderHoldCards(idx, []);
-            })
-            this.renderPublicCards([]);
         }
         this.showReadyBtn();
         this.showArrow();
@@ -441,7 +444,15 @@ export class RoomClient extends Component {
         }
         this.game_status = data.message.game_status;
         this.call_desk = data.message.call_desk;
+        this.max_call_score = Math.max(data.message.max_call_score, this.max_call_score);
         if (this.game_status == 2) {
+            this.renderLastCards(data.message.last_cards);
+            for (const player of this.players) {
+                if (player.id == data.from_uid) {
+                    player.call_score = data.message.call_score;
+                    break;
+                }
+            }
             CNet.send({
                 cmd: 'ReqWatchCards',
                 data: {}
@@ -482,6 +493,7 @@ export class RoomClient extends Component {
             const win_coins = data.message.settle_info.win_coins_data[`${this.players[0].id}`].win_coins;
             const win_role = data.message.settle_info.win_role;
             this.renderSettle(win_role, win_coins);
+            this.showPlayCardBtn();
         }
         this.showArrow();
     }
@@ -582,6 +594,33 @@ export class RoomClient extends Component {
         }else {
             descCom.string = `你输了${winCoin}!`;
         }
+        this.node.getChildByName("Mask").active = true;
+    }
+
+    // 渲染底牌区域
+    private renderLastCards(cards: number[]) {
+        if (this.game_status > 0 && cards.length == 0) {
+            cards = [301, 301, 301]
+        }
+        this.LastPokerArea.removeAllChildren();
+        this.LastPokerArea.addComponent(PokerFactory).Init(
+            this.pokerAtlas, this.pokerViewPrefab, this.pokerBackSp
+        );
+        var xpos = 0;
+        var ypos = 0;
+        this.LastPokerArea.getScale
+        var width = this.LastPokerArea.getComponent(UITransform).width;
+        var xpos = Math.floor((width - (cards.length * 25)) / 2);
+        for (var i = 0; i < cards.length; i++) { 
+            var poker = PokerFactory.Instance.CreatePoker(cards[i]); 
+            if (this.game_status >= 2) {
+                poker.ShowValue();
+            }else {
+                poker.ShowBack();
+            }
+            poker.node.setPosition(xpos, ypos);
+            xpos += 70;
+        }
     }
 
     // 获取玩家的位置
@@ -600,6 +639,14 @@ export class RoomClient extends Component {
         this.ReadyBtn_0.active = true;
         this.ReadyBtn_1.active = true;
         this.ReadyBtn_2.active = true;
+
+        this.players.forEach((v, idx) => {
+            if (v.is_ready) {
+                this[`ReadyBtnText_${idx}`].string = "已准备"
+            }else {
+                this[`ReadyBtnText_${idx}`].string = "未准备"
+            }
+        })
     }
 
     // 展示当前操作的人
@@ -621,21 +668,27 @@ export class RoomClient extends Component {
 
     // 展示叫分
     private showCallScore() {
-        const setCallScore = (show: boolean) => {
-            this.CallScoreBtn_1.active = show;
-            this.CallScoreBtn_2.active = show;
-            this.CallScoreBtn_3.active = show;
-
-            this.CallScoreText_0.enabled = show;
-            this.CallScoreText_1.enabled = show;
-            this.CallScoreText_2.enabled = show;
-        }
-
         if (this.game_status != 1) {
-            setCallScore(false);
+            this.CallScoreBtn_0.active = false;
+            this.players.forEach((v, idx) => {
+                this[`CallScoreBtn_${idx + 1}`].active = false;
+                this[`CallScoreText_${idx}`].active = false;
+            });
             return;
         }
-        setCallScore(true);
+        this.CallScoreBtn_0.active = true;
+        this.players.forEach((v, idx) => {
+            this[`CallScoreBtn_${idx + 1}`].active = true;
+            if (v.call_score > 0) {
+                this[`CallScoreText_${idx}`].getComponent(Label).string = v.call_score + '分';
+            }else {
+                this[`CallScoreText_${idx}`].getComponent(Label).string = "不叫";
+            }
+            
+            // if (this.max_call_score > v.call_score) {
+            this[`CallScoreBtn_${idx + 1}`].getComponent(Button).interactable = false;
+            // }
+        })
     }
 
     // 展示出牌按钮
