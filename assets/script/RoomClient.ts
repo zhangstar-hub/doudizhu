@@ -1,4 +1,4 @@
-import { _decorator, AssetManager, assetManager, view, Component, director, Label, Node, Prefab, resources, Sprite, SpriteAtlas, SpriteFrame, Texture2D, NodeEventType, EventTouch, Button, UITransform, log, instantiate } from 'cc';
+import { _decorator, AssetManager, assetManager, view, Component, director, Label, Node, Prefab, resources, Sprite, SpriteAtlas, SpriteFrame, Texture2D, NodeEventType, EventTouch, Button, UITransform, log, instantiate, Color } from 'cc';
 import { EventCenter } from './event/EventCenter';
 import { GameEvent } from './event/GameEvent';
 import { CNet } from './network/Network';
@@ -33,8 +33,8 @@ export class RoomClient extends Component {
     ReadyBtn_0: Node = null!;
     @property({group: {name: 'user_0'}, type: Label})
     ReadyBtnText_0: Label = null!;
-    @property({group: {name: 'user_0'}, type: Node})
-    CallScoreText_0: Node = null!;
+    @property({group: {name: 'user_0'}, type: Label})
+    CallScoreText_0: Label = null!;
     @property({group: {name: 'user_0'}, type: Node})
     Arrow_0: Node = null!;
     @property({group: {name: 'user_0'}, type: Node})
@@ -50,8 +50,8 @@ export class RoomClient extends Component {
     ReadyBtn_1: Node = null!;
     @property({group: {name: 'user_1'}, type: Label})
     ReadyBtnText_1: Label = null!;
-    @property({group: {name: 'user_1'}, type: Node})
-    CallScoreText_1: Node = null!;
+    @property({group: {name: 'user_1'}, type: Label})
+    CallScoreText_1: Label = null!;
     @property({group: {name: 'user_1'}, type: Node})
     Arrow_1: Node = null!;
     @property({group: {name: 'user_1'}, type: Node})
@@ -67,8 +67,8 @@ export class RoomClient extends Component {
     ReadyBtn_2: Node = null!;
     @property({group: {name: 'user_2'}, type: Label})
     ReadyBtnText_2: Label = null!;
-    @property({group: {name: 'user_2'}, type: Node})
-    CallScoreText_2: Node = null!;
+    @property({group: {name: 'user_2'}, type: Label})
+    CallScoreText_2: Label = null!;
     @property({group: {name: 'user_2'}, type: Node})
     Arrow_2: Node = null!;
     @property({group: {name: 'user_2'}, type: Node})
@@ -211,19 +211,20 @@ export class RoomClient extends Component {
 
     // 出牌
     public onClickPlayPoker(event:Event) {
-        console.log('play_cards_lock', this.play_cards_lock);
+        const played_cards = [];
+        this.PokerArea_0.children.forEach((node: Node) => {
+            const poker = node.getComponent(Poker);
+            if (poker.selected) {
+                played_cards.push(poker.PokerValue());
+            }
+        });
+        if (played_cards.length <= 0) {
+            return;
+        }
         if (this.play_cards_lock) {
             return
         }
-        const played_cards = [];
         this.play_cards_lock = true;
-        
-        this.PokerArea_0.children.forEach((node: Node) => {
-            const poker = node.getComponent(Poker);
-            // if (poker.selected) {
-            played_cards.push(poker.PokerValue());
-            // }
-        });
         CNet.send({
             cmd: 'ReqPlayCards',
             data: {
@@ -251,6 +252,7 @@ export class RoomClient extends Component {
         this.SettleView.active = false;
         this.game_status = 0;
         this.my_cards = [];
+        this.max_call_score = 0;
         this.players.forEach(p => {
             this.renderPlayer(p);
         })
@@ -331,6 +333,12 @@ export class RoomClient extends Component {
         this.game_status = data.game_status;
         this.call_desk = data.call_desk;
         this.max_call_score = Math.max(data.max_call_score, this.max_call_score);
+        for (const player of this.players) {
+            if (globalThis.UserInfo.id == player.id) {
+                player.call_score = data.call_score;
+                break;
+            }
+        }
         if (this.game_status == 2) {
             this.renderLastCards(data.last_cards);
             CNet.send({
@@ -363,7 +371,6 @@ export class RoomClient extends Component {
 
     // 出牌
     public ReqPlayCards(data: {[key:string]:any}) {
-        console.log(data);
         this.play_cards_lock = false;
         if (data.error) {
             return
@@ -445,14 +452,14 @@ export class RoomClient extends Component {
         this.game_status = data.message.game_status;
         this.call_desk = data.message.call_desk;
         this.max_call_score = Math.max(data.message.max_call_score, this.max_call_score);
+        for (const player of this.players) {
+            if (player.id == data.from_uid) {
+                player.call_score = data.message.call_score;
+                break;
+            }
+        }
         if (this.game_status == 2) {
             this.renderLastCards(data.message.last_cards);
-            for (const player of this.players) {
-                if (player.id == data.from_uid) {
-                    player.call_score = data.message.call_score;
-                    break;
-                }
-            }
             CNet.send({
                 cmd: 'ReqWatchCards',
                 data: {}
@@ -505,7 +512,6 @@ export class RoomClient extends Component {
         const user_coin: Label = this[`user_${position}_coin`];
         const user_avatar: Sprite = this[`user_${position}_avatar`];
         const ReadyBtnText: Label = this[`ReadyBtnText_${position}`];
-        const CallScoreText: Label = this[`CallScoreText_${position}`];
 
         const avatarUrl = `img/avatar/${player.avatar}/spriteFrame`
         this.gameGundle.load(avatarUrl, SpriteFrame, (err, spriteFrame: SpriteFrame) => {
@@ -519,7 +525,6 @@ export class RoomClient extends Component {
         } else {
             ReadyBtnText.string = "未准备"
         }
-        CallScoreText.string = `${player.call_score}分`
         if (position === 0) {
             this.renderHoldCards(position, this.my_cards)
         }else {
@@ -672,22 +677,29 @@ export class RoomClient extends Component {
             this.CallScoreBtn_0.active = false;
             this.players.forEach((v, idx) => {
                 this[`CallScoreBtn_${idx + 1}`].active = false;
-                this[`CallScoreText_${idx}`].active = false;
+                this[`CallScoreText_${idx}`].node.active = false;
             });
             return;
         }
         this.CallScoreBtn_0.active = true;
         this.players.forEach((v, idx) => {
-            this[`CallScoreBtn_${idx + 1}`].active = true;
-            if (v.call_score > 0) {
-                this[`CallScoreText_${idx}`].getComponent(Label).string = v.call_score + '分';
+            const text = this[`CallScoreText_${idx}`];
+            text.node.active = true;
+            const btn = this[`CallScoreBtn_${idx + 1}`];
+            btn.active = true;
+            if (v.call_score == -1) {
+                text.getComponent(Label).string = "";
+            }else if (v.call_score == 0) {
+                text.getComponent(Label).string = "不叫";
             }else {
-                this[`CallScoreText_${idx}`].getComponent(Label).string = "不叫";
+                text.getComponent(Label).string = v.call_score + '分';
             }
-            
-            // if (this.max_call_score > v.call_score) {
-            this[`CallScoreBtn_${idx + 1}`].getComponent(Button).interactable = false;
-            // }
+            console.log(this.max_call_score, v.call_score);
+            if (this.max_call_score > idx) {
+                btn.getComponent(Button).interactable = false;
+            }else {
+                btn.getComponent(Button).interactable = true;
+            }
         })
     }
 

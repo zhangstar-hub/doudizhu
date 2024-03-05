@@ -3512,7 +3512,7 @@
         "__id__": 97
       }
     ],
-    "_active": false,
+    "_active": true,
     "_components": [
       {
         "__id__": 100
@@ -3699,8 +3699,8 @@
     "_color": {
       "__type__": "cc.Color",
       "r": 255,
-      "g": 255,
-      "b": 255,
+      "g": 253,
+      "b": 253,
       "a": 255
     },
     "_spriteFrame": {
@@ -3737,12 +3737,12 @@
       }
     ],
     "_interactable": true,
-    "_transition": 3,
+    "_transition": 1,
     "_normalColor": {
       "__type__": "cc.Color",
-      "r": 214,
-      "g": 214,
-      "b": 214,
+      "r": 255,
+      "g": 253,
+      "b": 253,
       "a": 255
     },
     "_hoverColor": {
@@ -3840,7 +3840,7 @@
         "__id__": 106
       }
     ],
-    "_active": false,
+    "_active": true,
     "_components": [
       {
         "__id__": 109
@@ -4027,8 +4027,8 @@
     "_color": {
       "__type__": "cc.Color",
       "r": 255,
-      "g": 255,
-      "b": 255,
+      "g": 253,
+      "b": 253,
       "a": 255
     },
     "_spriteFrame": {
@@ -4065,12 +4065,12 @@
       }
     ],
     "_interactable": true,
-    "_transition": 3,
+    "_transition": 1,
     "_normalColor": {
       "__type__": "cc.Color",
-      "r": 214,
-      "g": 214,
-      "b": 214,
+      "r": 255,
+      "g": 253,
+      "b": 253,
       "a": 255
     },
     "_hoverColor": {
@@ -4168,7 +4168,7 @@
         "__id__": 115
       }
     ],
-    "_active": false,
+    "_active": true,
     "_components": [
       {
         "__id__": 118
@@ -4355,8 +4355,8 @@
     "_color": {
       "__type__": "cc.Color",
       "r": 255,
-      "g": 255,
-      "b": 255,
+      "g": 253,
+      "b": 253,
       "a": 255
     },
     "_spriteFrame": {
@@ -4393,12 +4393,12 @@
       }
     ],
     "_interactable": true,
-    "_transition": 3,
+    "_transition": 1,
     "_normalColor": {
       "__type__": "cc.Color",
-      "r": 214,
-      "g": 214,
-      "b": 214,
+      "r": 255,
+      "g": 253,
+      "b": 253,
       "a": 255
     },
     "_hoverColor": {
@@ -4496,7 +4496,7 @@
         "__id__": 124
       }
     ],
-    "_active": false,
+    "_active": true,
     "_components": [
       {
         "__id__": 127
@@ -4683,8 +4683,8 @@
     "_color": {
       "__type__": "cc.Color",
       "r": 255,
-      "g": 255,
-      "b": 255,
+      "g": 253,
+      "b": 253,
       "a": 255
     },
     "_spriteFrame": {
@@ -4721,12 +4721,12 @@
       }
     ],
     "_interactable": true,
-    "_transition": 3,
+    "_transition": 1,
     "_normalColor": {
       "__type__": "cc.Color",
-      "r": 214,
-      "g": 214,
-      "b": 214,
+      "r": 255,
+      "g": 253,
+      "b": 253,
       "a": 255
     },
     "_hoverColor": {
@@ -4916,7 +4916,7 @@
       "__id__": 2
     },
     "_children": [],
-    "_active": false,
+    "_active": true,
     "_components": [
       {
         "__id__": 136
@@ -4968,7 +4968,7 @@
     "__prefab": null,
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 46.68,
+      "width": 0,
       "height": 50.4
     },
     "_anchorPoint": {
@@ -4998,7 +4998,7 @@
       "b": 118,
       "a": 255
     },
-    "_string": "1分",
+    "_string": "",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
     "_actualFontSize": 30,
