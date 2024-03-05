@@ -96,6 +96,9 @@ export class RoomClient extends Component {
     // 底牌区域
     @property(Node)
     LastPokerArea: Node = null!;
+    // 积分倍数展示
+    @property(Label)
+    ScoreMultiLabel: Label = null!;
 
     // 结算弹出
     @property(Node)
@@ -298,6 +301,7 @@ export class RoomClient extends Component {
         this.showPlayCardBtn();
         this.renderPublicCards(this.played_cards);
         this.renderLastCards(room_data.last_cards);
+        this.renderScoreMulti(room_data.score_multi);
     }
 
     // 离开房间
@@ -349,6 +353,7 @@ export class RoomClient extends Component {
         this.showCallScore();
         this.showArrow();
         this.showPlayCardBtn();
+        this.renderScoreMulti(data.score_multi);
     }
 
     // 看牌
@@ -396,6 +401,7 @@ export class RoomClient extends Component {
         }
         this.renderPublicCards(this.played_cards);
         this.showArrow();
+        this.renderScoreMulti(data.score_multi);
     }
 
     // 其他人进入房间 更新信息
@@ -468,6 +474,7 @@ export class RoomClient extends Component {
         this.showCallScore();
         this.showArrow();
         this.showPlayCardBtn();
+        this.renderScoreMulti(data.message.score_multi);
     }
 
     // 其他人出牌 更新信息
@@ -503,6 +510,7 @@ export class RoomClient extends Component {
             this.showPlayCardBtn();
         }
         this.showArrow();
+        this.renderScoreMulti(data.message.score_multi);
     }
 
     // 渲染用戶信息
@@ -626,6 +634,11 @@ export class RoomClient extends Component {
             poker.node.setPosition(xpos, ypos);
             xpos += 70;
         }
+    }
+
+    // 渲染分数区
+    private renderScoreMulti(value: number) {
+        this.ScoreMultiLabel.string = value + '';
     }
 
     // 获取玩家的位置
