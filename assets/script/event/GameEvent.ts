@@ -2,6 +2,7 @@ export enum GameEvent {
     ReqLogin = 'ReqLogin',
     ReqKeepAlive = 'ReqKeepAlive',
     ReqEnterRoom = 'ReqEnterRoom',
+    ReqEnterNewRoom = 'ReqEnterNewRoom',
     ReqLeaveRoom = 'ReqLeaveRoom',
     ReqRoomReady = 'ReqRoomReady',
     ReqCallScore = 'ReqCallScore',

@@ -1,4 +1,5 @@
-import { _decorator, Component, Node, Button, EventTouch, tween, Vec3 } from 'cc';
+import { _decorator, Component, Node, Button, EventTouch, tween, Vec3, director } from 'cc';
+import { CNet } from './network/Network';
 const { ccclass, property } = _decorator;
 
 @ccclass('CreateRoomWindow')
@@ -20,13 +21,19 @@ export class CreateRoomWindow extends Component {
         this.node.active = false;
     }
 
-    public onCreateRoomBtnClick(){
-        console.log("onCreateRoomBtnClick");
+    public onCreateRoomBtnClick() {
+        console.log("choseSection=", this.choseSection);
+        globalThis.RoomScoreMulti = [1,5,10][this.choseSection];
+        console.log(globalThis.RoomScoreMulti);
+        director.loadScene("RoomScence");
     }
 
-    onButtonClick(event: EventTouch) {
+    public onButtonClick(event: EventTouch) {
+        console.log("this", this.choseSection);
+        this.choseSection = 1
         this.buttons.forEach((btn, index) => {
             if (event.target === btn.node) {
+                console.log("index=", index, this.choseSection);
                 this.choseSection = index;
                 tween(btn.node).to(0.1, {scale: new Vec3(1.2, 1.2, 1)}).start();
             }else {

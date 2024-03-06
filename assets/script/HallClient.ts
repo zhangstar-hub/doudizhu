@@ -19,8 +19,6 @@ export class HallClient extends Component {
     public JoinRoom: Node = null!;
 
     start() {
-        console.log("hall");
-        
         this.ID.string = "ID:" + globalThis.UserInfo.id;
         this.Name.string = globalThis.UserInfo.usernname;
         
@@ -36,15 +34,12 @@ export class HallClient extends Component {
           });
     }
 
-    update(deltaTime: number) {
-        
-    }
-
     public onCreateRoom(){
         this.CreationRoom.active = true;
     }
 
     public onJoinRoom() {
+        globalThis.RoomScoreMulti = undefined;
         director.loadScene("RoomScence");
     }
 }

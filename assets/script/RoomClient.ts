@@ -154,6 +154,7 @@ export class RoomClient extends Component {
 
     private enterGame() {
         EventCenter.on(GameEvent.ReqEnterRoom, this.ReqEnterRoom, this);
+        EventCenter.on(GameEvent.ReqEnterNewRoom, this.ReqEnterRoom, this);
         EventCenter.on(GameEvent.ReqLeaveRoom, this.ReqLeaveRoom, this);
         EventCenter.on(GameEvent.ReqRoomReady, this.ReqRoomReady, this);
         EventCenter.on(GameEvent.ReqCallScore, this.ReqCallScore, this);
@@ -164,10 +165,20 @@ export class RoomClient extends Component {
         EventCenter.on(GameEvent.ReqRoomReadyUpdate, this.ReqRoomReadyUpdate, this);
         EventCenter.on(GameEvent.ReqCallScoreUpdate, this.ReqCallScoreUpdate, this);
         EventCenter.on(GameEvent.ReqPlayCardsUpdate, this.ReqPlayCardsUpdate, this);
-        CNet.send({
-            cmd: 'ReqEnterRoom',
-            data: {} 
-        })
+
+        if (globalThis.RoomScoreMulti == undefined) {
+            CNet.send({
+                cmd: 'ReqEnterRoom',
+                data: {} 
+            })
+        }else {
+            CNet.send({
+                cmd: 'ReqEnterNewRoom',
+                data: {
+                    "multi": globalThis.RoomScoreMulti,
+                } 
+            })
+        }
     }
 
     // init player
@@ -256,8 +267,10 @@ export class RoomClient extends Component {
         this.game_status = 0;
         this.my_cards = [];
         this.max_call_score = 0;
-        this.players.forEach(p => {
-            this.renderPlayer(p);
+        this.players.forEach((p, idx) => {
+            if (p.id) {
+                this.renderPlayer(p)
+            }
         })
         this.renderPublicCards([]);
         this.showReadyBtn();
@@ -417,7 +430,7 @@ export class RoomClient extends Component {
         const from_uid = data.from_uid;
         for (var i = 0; i < this.players.length; i++) {
             if (from_uid == this.players[i].id) {
-                this.renderPlayer({...this.default_player, desk_id: this.players[i].desk_id});
+                this.renderPlayer(this.default_player, i);
                 this.players[i] = {};
                 break;
             }
@@ -514,8 +527,10 @@ export class RoomClient extends Component {
     }
 
     // 渲染用戶信息
-    private renderPlayer(player: Player) {
-        const position = this.getPosition(player.desk_id);
+    private renderPlayer(player: Player, position?: number): void {
+        if (position == undefined) {
+            position = this.getPosition(player.desk_id);
+        }
         const user_name: Label = this[`user_${position}_name`];
         const user_coin: Label = this[`user_${position}_coin`];
         const user_avatar: Sprite = this[`user_${position}_avatar`];
