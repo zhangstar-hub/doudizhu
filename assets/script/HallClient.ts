@@ -39,7 +39,7 @@ export class HallClient extends Component {
     }
 
     public onJoinRoom() {
-        globalThis.RoomScoreMulti = undefined;
+        globalThis.RoomBaseScore = undefined;
         director.loadScene("RoomScence");
     }
 }

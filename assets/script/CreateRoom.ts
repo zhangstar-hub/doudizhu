@@ -8,9 +8,6 @@ export class CreateRoomWindow extends Component {
     @property(Button)
     buttons: Button[] = [];
 
-    // 选中的挡位
-    public choseSection: number = 0;
-
     start() {
         this.buttons.forEach(button => {
             button.node.on(Button.EventType.CLICK, this.onButtonClick, this);
@@ -22,19 +19,14 @@ export class CreateRoomWindow extends Component {
     }
 
     public onCreateRoomBtnClick() {
-        console.log("choseSection=", this.choseSection);
-        globalThis.RoomScoreMulti = [1,5,10][this.choseSection];
-        console.log(globalThis.RoomScoreMulti);
+        console.log(globalThis.RoomBaseScore);
         director.loadScene("RoomScence");
     }
 
     public onButtonClick(event: EventTouch) {
-        console.log("this", this.choseSection);
-        this.choseSection = 1
         this.buttons.forEach((btn, index) => {
             if (event.target === btn.node) {
-                console.log("index=", index, this.choseSection);
-                this.choseSection = index;
+                globalThis.RoomBaseScore = [1,5,10][index];
                 tween(btn.node).to(0.1, {scale: new Vec3(1.2, 1.2, 1)}).start();
             }else {
                 tween(btn.node).to(0.1, {scale: new Vec3(1, 1, 1)}).start();

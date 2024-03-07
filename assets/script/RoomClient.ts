@@ -166,7 +166,7 @@ export class RoomClient extends Component {
         EventCenter.on(GameEvent.ReqCallScoreUpdate, this.ReqCallScoreUpdate, this);
         EventCenter.on(GameEvent.ReqPlayCardsUpdate, this.ReqPlayCardsUpdate, this);
 
-        if (globalThis.RoomScoreMulti == undefined) {
+        if (globalThis.RoomBaseScore == undefined) {
             CNet.send({
                 cmd: 'ReqEnterRoom',
                 data: {} 
@@ -175,7 +175,7 @@ export class RoomClient extends Component {
             CNet.send({
                 cmd: 'ReqEnterNewRoom',
                 data: {
-                    "multi": globalThis.RoomScoreMulti,
+                    "base_score": globalThis.RoomBaseScore,
                 } 
             })
         }
@@ -428,7 +428,9 @@ export class RoomClient extends Component {
     // 其他人离开房间 更新信息
     public ReqLeaveRoomUpdate(data: {[key:string]:any}): void {
         const from_uid = data.from_uid;
+        console.log(this.players);
         for (var i = 0; i < this.players.length; i++) {
+            console.log(i, from_uid, this.players[i].id);
             if (from_uid == this.players[i].id) {
                 this.renderPlayer(this.default_player, i);
                 this.players[i] = {};
